@@ -38,6 +38,7 @@ import java.util.Map;
 class UpdateLoaderWorker implements WorkerTask {
 
     private final String applicationConfigUrl;
+    private final String applicationContentUrl;
     private final int appNativeVersion;
     private final PluginFilesStructure filesStructure;
     private final Map<String, String> requestHeaders;
@@ -57,6 +58,7 @@ class UpdateLoaderWorker implements WorkerTask {
      */
     UpdateLoaderWorker(final UpdateDownloadRequest request) {
         applicationConfigUrl = request.getConfigURL();
+        applicationContentUrl = request.getContentURL();
         appNativeVersion = request.getCurrentNativeVersion();
         filesStructure = request.getCurrentReleaseFileStructure();
         requestHeaders = request.getRequestHeaders();
@@ -70,6 +72,7 @@ class UpdateLoaderWorker implements WorkerTask {
             return;
         }
 
+        Log.d("CHCP", applicationConfigUrl);
         // download new application config
         final ApplicationConfig newAppConfig = downloadApplicationConfig(applicationConfigUrl);
         if (newAppConfig == null) {
@@ -78,14 +81,14 @@ class UpdateLoaderWorker implements WorkerTask {
         }
         final ContentConfig newContentConfig = newAppConfig.getContentConfig();
         if (newContentConfig == null
-                || TextUtils.isEmpty(newContentConfig.getReleaseVersion())
-                || TextUtils.isEmpty(newContentConfig.getContentUrl())) {
+                || TextUtils.isEmpty(newContentConfig.getReleaseVersion())) {
             setErrorResult(ChcpError.NEW_APPLICATION_CONFIG_IS_INVALID, null);
             return;
         }
 
         // check if there is a new content version available
         if (newContentConfig.getReleaseVersion().equals(oldAppConfig.getContentConfig().getReleaseVersion())) {
+            Log.d("CHCP", "No new content version ");
             setNothingToUpdateResult(newAppConfig);
             return;
         }
@@ -97,7 +100,7 @@ class UpdateLoaderWorker implements WorkerTask {
         }
 
         // download new content manifest
-        final ContentManifest newContentManifest = downloadContentManifest(newContentConfig.getContentUrl());
+        final ContentManifest newContentManifest = downloadContentManifest(applicationContentUrl);
         if (newContentManifest == null) {
             setErrorResult(ChcpError.FAILED_TO_DOWNLOAD_CONTENT_MANIFEST, newAppConfig);
             return;
@@ -108,6 +111,7 @@ class UpdateLoaderWorker implements WorkerTask {
         if (diff.isEmpty()) {
             manifestStorage.storeInFolder(newContentManifest, filesStructure.getWwwFolder());
             appConfigStorage.storeInFolder(newAppConfig, filesStructure.getWwwFolder());
+            Log.d("CHCP", "No new content in manifold ");
             setNothingToUpdateResult(newAppConfig);
 
             return;
@@ -119,7 +123,7 @@ class UpdateLoaderWorker implements WorkerTask {
         recreateDownloadFolder(filesStructure.getDownloadFolder());
 
         // download files
-        boolean isDownloaded = downloadNewAndChangedFiles(newContentConfig.getContentUrl(), diff);
+        boolean isDownloaded = downloadNewAndChangedFiles(applicationContentUrl, diff);
         if (!isDownloaded) {
             cleanUp();
             setErrorResult(ChcpError.FAILED_TO_DOWNLOAD_UPDATE_FILES, newAppConfig);

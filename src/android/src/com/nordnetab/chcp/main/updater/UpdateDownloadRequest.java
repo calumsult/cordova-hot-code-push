@@ -14,6 +14,7 @@ import java.util.Map;
 public class UpdateDownloadRequest {
 
     private String configURL;
+    private String contentURL;
     private PluginFilesStructure currentReleaseFS;
     private int currentNativeVersion;
     private Map<String, String> requestHeaders;
@@ -23,16 +24,19 @@ public class UpdateDownloadRequest {
      *
      * @param context               application context
      * @param configURL             chcp.json url
+     * @param contentURL            content url
      * @param currentReleaseVersion current web content version
      * @param currentNativeVersion  current native interface version
      * @param requestHeaders        additional request headers, which will be added to all requests
      */
     public UpdateDownloadRequest(final Context context,
                                  final String configURL,
+                                 final String contentURL,
                                  final String currentReleaseVersion,
                                  final int currentNativeVersion,
                                  final Map<String, String> requestHeaders) {
         this.configURL = configURL;
+        this.contentURL = contentURL;
         this.currentNativeVersion = currentNativeVersion;
         this.requestHeaders = requestHeaders;
         this.currentReleaseFS = new PluginFilesStructure(context, currentReleaseVersion);
@@ -55,6 +59,15 @@ public class UpdateDownloadRequest {
      */
     public String getConfigURL() {
         return configURL;
+    }
+
+    /**
+     * URL to content on the server.
+     *
+     * @return url to content
+     */
+    public String getContentURL() {
+        return contentURL;
     }
 
     /**
@@ -90,6 +103,7 @@ public class UpdateDownloadRequest {
 
         private Context mContext;
         private String configURL;
+        private String contentURL;
         private String currentReleaseVersion;
         private int currentNativeVersion;
         private Map<String, String> requestHeaders;
@@ -111,6 +125,17 @@ public class UpdateDownloadRequest {
          */
         public Builder setConfigURL(final String configURL) {
             this.configURL = configURL;
+            return this;
+        }
+
+        /**
+         * Setter for content url.
+         *
+         * @param configURL chcp.json config url
+         * @return builder
+         */
+        public Builder setContentURL(final String configURL) {
+            this.contentURL = configURL.replaceAll("chcp.json", "");
             return this;
         }
 
@@ -153,7 +178,7 @@ public class UpdateDownloadRequest {
          * @return update request instance
          */
         public UpdateDownloadRequest build() {
-            return new UpdateDownloadRequest(mContext, configURL, currentReleaseVersion, currentNativeVersion, requestHeaders);
+            return new UpdateDownloadRequest(mContext, configURL, contentURL, currentReleaseVersion, currentNativeVersion, requestHeaders);
         }
     }
 
